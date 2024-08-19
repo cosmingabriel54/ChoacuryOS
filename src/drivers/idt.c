@@ -1,6 +1,7 @@
 #include "gdt.h"
 #include "idt.h"
 #include "pic.h"
+#include "pci.h"
 #include "utils.h"
 #include "vga.h"
 #include "../kernel/panic.h"
@@ -9,6 +10,7 @@
 /* Macros for interrupt code gen */
 #define ISR_LIST_X X(0) X(1) X(2) X(3) X(4) X(5) X(6) X(7) X(8) X(9) X(10) X(11) X(12) X(13) X(14) X(15) X(16) X(17) X(18) X(19) X(20) X(21) X(22) X(23) X(24) X(25) X(26) X(27) X(28) X(29) X(30) X(31)
 #define IRQ_LIST_X X(0) X(1) X(2) X(3) X(4) X(5) X(6) X(7) X(8) X(9) X(10) X(11) X(12) X(13) X(14) X(15) X(16) X(17) X(18) X(19) X(20) X(21) X(22) X(23) X(24) X(25) X(26) X(27) X(28) X(29) X(30) X(31)
+#define NETWORK_DEVICE_STATUS_REGISTER 0x08
 
 /* How every interrupt gate (handler) is defined */
 typedef struct {
@@ -98,6 +100,9 @@ void c_irq_handler(u8 irq) {
 
     pic_send_eoi(irq);
 }
+void idt_register_irq_handler(int irq, void (*handler)()) {
+    irq_handlers[irq] = handler;
+}
 
 static void set_idt_gate(int n, void (*handler)()) {
     idt[n].low_offset = ((uptr)handler >> 0) & 0xFFFF;
@@ -106,13 +111,31 @@ static void set_idt_gate(int n, void (*handler)()) {
     idt[n].flags = 0x8E;
     idt[n].high_offset = ((uptr)handler >> 16) & 0xFFFF;
 }
-
-void idt_register_irq_handler(int irq, void (*handler)()) {
-    irq_handlers[irq] = handler;
-}
-
 static void idt_flush() {
     asm volatile("lidt %0" :: "m"(idt_reg));
+}
+uint32_t read_device_register(uint32_t address) {
+    volatile uint32_t* register_address = (volatile uint32_t*)address;
+    return *register_address;
+}
+void write_device_register(uint32_t address, uint32_t value) {
+    volatile uint32_t* register_address = (volatile uint32_t*)address;
+    *register_address = value;
+}
+
+
+void network_device_irq_handler() {
+    dprintf("Network device interrupt triggered\n");
+
+    // Use the global PCI location variables
+    uint32_t io_base = pci_read_bar(network_device_bus, network_device_slot, network_device_func, 0);
+
+    // Read and acknowledge the interrupt status
+    uint32_t status = read_device_register(io_base + NETWORK_DEVICE_STATUS_REGISTER);
+    write_device_register(io_base + NETWORK_DEVICE_STATUS_REGISTER, status);
+
+    // Handle the interrupt status accordingly
+    // (This is device-specific logic based on the status register value)
 }
 
 /* Code gen extern definitions for isr handler (defined in interrupt.asm) */

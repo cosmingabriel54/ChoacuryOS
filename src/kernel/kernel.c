@@ -8,8 +8,8 @@
 #include "../drivers/idt.h"
 #include "../drivers/keymaps/ps2_keymap_us.h"   // <-- US Keyboard Layout.
 #include "../drivers/mouse.h"
-#include "../drivers/pci.h"
 #include "../drivers/pic.h"
+#include "../drivers/pci.h"
 #include "../drivers/pit.h"
 #include "../drivers/ports.h"
 #include "../drivers/ps2.h"
@@ -62,19 +62,25 @@ void k_main(multiboot_info_t* mbd, uint32_t magic) {
     }
 
     pmm_init(mbd);
-    pic_init();
-    pit_init();
+	term_write("Starting pci init\n", TC_WHITE);
+	ps2_init();
+	term_write("Starting ps2_init_keymap_us init\n", TC_WHITE);
 
-    asm volatile("sti");
-
-    ps2_init();
     ps2_init_keymap_us();
 
     // StartUp_Beeps();
-
+	term_write("Starting storage_device_init pci\n", TC_WHITE);
     storage_device_init();
-    debug_print_pci();
+	term_write(" storage_device_init finished\n", TC_WHITE);
+    pic_init();
+	term_write("Pci init finished\n", TC_WHITE);
+	term_write("Starting pit_init init\n", TC_WHITE);
+	pit_init();
+	term_write("Starting ps2_init init\n", TC_WHITE);
 
+	term_write("Starting debug print pci\n", TC_WHITE);
+    debug_print_pci();
+	term_write("Pci debug finished\n", TC_WHITE);
     shell_start();
 }
 

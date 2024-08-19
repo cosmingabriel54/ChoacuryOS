@@ -7,7 +7,12 @@
 
 u32 read_pci(u16 bus, u16 device, u16 function, u32 regoffset);
 void write_pci(u16 bus, u16 device, u16 function, u32 regoffset, u32 data);
+uint32_t pci_read_bar(uint8_t bus, uint8_t slot, uint8_t func, uint8_t bar_num);
 void debug_print_pci();
+
+static uint8_t network_device_bus;
+static uint8_t network_device_slot;
+static uint8_t network_device_func;
 
 typedef struct device_descriptor //to be updated eventually: there are more important values one might weant to read, like the BARs (base addresses of device buffers)
 {
