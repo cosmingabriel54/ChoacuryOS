@@ -6,8 +6,8 @@
 //        for VGA and no "general" ones.
 #include "../drivers/vga.h"
 
-#include <kernel/panic.h>
-#include <memory/kmalloc.h>
+#include "../kernel/panic.h"
+#include "../memory/kmalloc.h"
 #include "../shell/terminal.h"
 #include <stdarg.h>
 
@@ -353,21 +353,43 @@ void dprintf(const char* format, ...) {
             switch (*format) {
                 case 'd':
                     itoa(va_arg(args, int), buffer, 10);
-                term_write(buffer, TC_WHITE);
-                break;
+                    term_write(buffer, TC_WHITE);
+                    break;
                 case 's':
                     str = va_arg(args, const char*);
-                term_write(str, TC_WHITE);
-                break;
+                    term_write(str, TC_WHITE);
+                    break;
                 case 'p':
                     itoa((uintptr_t)va_arg(args, void*), buffer, 16);
-                term_write("0x", TC_WHITE);
-                term_write(buffer, TC_WHITE);
-                break;
+                    term_write("0x", TC_WHITE);
+                    term_write(buffer, TC_WHITE);
+                    break;
+                case 'x':
+                    {
+                        uint32_t num = va_arg(args, uint32_t);
+                        itoa(num, buffer, 16);
+                        term_write(buffer, TC_WHITE);
+                    }
+                    break;
+                case '0':
+                    if (*(format + 1) == '8' && *(format + 2) == 'x') {
+                        format += 2;  // Skip '08x'
+                        uint32_t num = va_arg(args, uint32_t);
+                        itoa(num, buffer, 16);
+                        int len = strlen(buffer);
+                        for (int i = 0; i < 8 - len; i++) {
+                            term_putchar('0', TC_WHITE);
+                        }
+                        term_write(buffer, TC_WHITE);
+                    } else {
+                        term_putchar('%', TC_WHITE);
+                        term_putchar('0', TC_WHITE);
+                    }
+                    break;
                 default:
                     term_putchar('%', TC_WHITE);
-                term_putchar(*format, TC_WHITE);
-                break;
+                    term_putchar(*format, TC_WHITE);
+                    break;
             }
         } else {
             term_putchar(*format, TC_WHITE);

@@ -25,7 +25,7 @@
 #include "multiboot.h"
 #include "panic.h"
 #include "process.h"
-
+#include "../drivers/nic.h"
 /* Startup Beep*/
 void StartUp_Beeps() {
     startbeep(450);
@@ -47,9 +47,9 @@ void k_main(multiboot_info_t* mbd, uint32_t magic) {
 
     vga_text_init(TC_BLACK);
 
-    u32 term_width = VGA_width;               // Set this to the width of your VGA text mode
-    u32 visible_height = VGA_height;          // Set this to the height of your VGA text mode (visible height)
-    u32 buffer_height = visible_height + 100; // Set this to a height larger than visible to allow scrolling
+    u32 term_width = VGA_width;
+    u32 visible_height = VGA_height;
+    u32 buffer_height = visible_height + 100;
 
     term_init(term_width, buffer_height, visible_height, vga_set_char, vga_move_cursor);
 
@@ -62,25 +62,20 @@ void k_main(multiboot_info_t* mbd, uint32_t magic) {
     }
 
     pmm_init(mbd);
-	term_write("Starting pci init\n", TC_WHITE);
-	ps2_init();
-	term_write("Starting ps2_init_keymap_us init\n", TC_WHITE);
+    pic_init();
+	pit_init();
+	asm volatile("sti");
+    ps2_init();
 
     ps2_init_keymap_us();
 
     // StartUp_Beeps();
-	term_write("Starting storage_device_init pci\n", TC_WHITE);
     storage_device_init();
-	term_write(" storage_device_init finished\n", TC_WHITE);
-    pic_init();
-	term_write("Pci init finished\n", TC_WHITE);
-	term_write("Starting pit_init init\n", TC_WHITE);
-	pit_init();
-	term_write("Starting ps2_init init\n", TC_WHITE);
+    //debug_print_pci();
+    //nic_init();
 
-	term_write("Starting debug print pci\n", TC_WHITE);
-    debug_print_pci();
-	term_write("Pci debug finished\n", TC_WHITE);
+    // Start the DHCP client
+    //dhcp_client_start();
     shell_start();
 }
 

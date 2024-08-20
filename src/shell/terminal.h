@@ -53,3 +53,4 @@ void term_write_hex(uint32_t value);
 void term_scroll();
 // debug
 void dprintf(const char* format, ...);
+void itoa(uintptr_t value, char* str, int base);

@@ -62,6 +62,7 @@ img: kernel
 run: img
 	qemu-system-x86_64 -hda $(BUILD_DIR)/ChoacuryOS.img -serial stdio -audiodev pa,id=snd0 -machine pcspk-audiodev=snd0
 
+
 clean:
 	rm -rf $(BUILD_DIR)
 
